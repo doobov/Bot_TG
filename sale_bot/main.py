@@ -50,14 +50,14 @@ def save_admin_ids():
     with open(ADMIN_FILE, "w", encoding="utf-8") as f:
         json.dump(ADMIN_IDS, f)
 
-# === НАСТРОЙКИ ===
+
 TELEGRAM_TOKEN = '7748447384:AAGQLEPntaC55u_HyOJw20BNBNG0an_NISY'
 PAYMENT_TOKEN = '390540012:LIVE:69831'  # токен yookassa
-CHECK_INTERVAL = 300  # 5 минут
+CHECK_INTERVAL = 300  
 CLEANUP_INTERVAL_DAYS = 1  
 SEEN_ADS_MAX_AGE_DAYS = 30
 
-# === ХРАНИЛИЩЕ ===
+
 user_links = {}  # {user_id: [url1, url2, ...]}
 seen_ads = {}    # {user_id: {ad_id1, ad_id2, ...}}
 user_states = {} # {user_id: state_string}
@@ -65,7 +65,7 @@ user_temp_data = {} # {user_id: {step_data}}
 user_access = {}
 link_balance = {}
 
-# === СЛОВАРЬ ГОРОДОВ ===
+
 avito_city_codes = {
     "москва": "moskva",
     "санкт-петербург": "sankt-peterburg",
@@ -79,14 +79,14 @@ avito_city_codes = {
     "омск": "omsk"
 }
 
-# Агенты
+
 USER_AGENTS = [
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/115.0",
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 13_4) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.4 Safari/605.1.15",
     "Mozilla/5.0 (Linux; Android 11; SM-A107F) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Mobile Safari/537.36"
 ]
 
-# === ЛОГГИРОВАНИЕ ===
+
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 
 LINK_EXPIRY_FILE = "link_expiry.json"
@@ -150,7 +150,7 @@ def save_user_access():
 def load_user_access():
     global user_access
     if not os.path.exists(ACCESS_FILE):
-        # если файла нет — создать пустой
+        
         with open(ACCESS_FILE, "w", encoding="utf-8") as f:
             json.dump({}, f)
         user_access = {}
@@ -179,7 +179,7 @@ def load_seen_ads():
         try:
             with open(SEEN_FILE, 'r', encoding='utf-8') as f:
                 raw = json.load(f)
-                seen_ads = {int(k): v for k, v in raw.items()}  # теперь: {user_id: {ad_id: date_str}}
+                seen_ads = {int(k): v for k, v in raw.items()}  # {user_id: {ad_id: date_str}}
                 logging.info("✅ seen_ads загружены из файла.")
         except Exception as e:
             logging.error(f"Ошибка при загрузке seen_ads: {e}")
@@ -199,7 +199,7 @@ def check_and_clean_user_links_if_too_large():
         if size_mb > max_size_mb:
             logging.warning(f"⚠️ Файл {LINKS_FILE} превышает {max_size_mb} МБ ({size_mb:.2f} МБ). Создаю резервную копию...")
 
-            # Создание резервной копии
+
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             backup_file = f"user_links_backup_{timestamp}.json"
             try:
@@ -210,7 +210,7 @@ def check_and_clean_user_links_if_too_large():
             except Exception as e:
                 logging.error(f"Ошибка при создании резервной копии: {e}")
 
-            # Очистка файла
+
             with open(LINKS_FILE, 'w', encoding='utf-8') as f:
                 json.dump({}, f)
             global user_links
@@ -275,13 +275,13 @@ def revoke_admin_access(update: Update, context: CallbackContext):
 def loop_notify_payment(bot: Bot, admin_id: int):
     while True:
         check_and_notify_payment(bot, admin_id)
-        time.sleep(86400)  # ждать 1 день (86400 секунд)
+        time.sleep(86400)  
 
 
 def check_and_notify_payment(bot: Bot, admin_id: int):
     file_path = "last_payment_reminder.txt"
 
-    # Получаем дату последнего напоминания
+
     if os.path.exists(file_path):
         with open(file_path, "r") as f:
             try:
@@ -363,7 +363,7 @@ def successful_payment_callback(update: Update, context: CallbackContext):
 
 
 def has_active_subscription(user_id):
-    global ADMIN_IDS  # добавляем это обязательно
+    global ADMIN_IDS  
     if user_id in ADMIN_IDS:
         return True
     date_str = user_access.get(user_id)
@@ -374,7 +374,7 @@ def has_active_subscription(user_id):
     except:
         return False
 
-# === ПАРСИНГ ОБЪЯВЛЕНИЙ ===
+
 def parse_avito(url, pages=3):
     session = requests.Session()
     session.headers.update({
@@ -439,18 +439,18 @@ def parse_avito(url, pages=3):
     return ads
 
 
-# === ФОНОВАЯ ПРОВЕРКА ===
+
 def check_ads(bot: Bot):
     import statistics
 
     while True:
         for user_id, links in user_links.items():
 
-            # проверка: есть ли подписка или активные ссылочные слоты
+            
             is_subscribed = has_active_subscription(user_id)
             active_links = []
 
-            # если нет подписки — проверяем срок жизни каждой ссылки
+            
             if not is_subscribed:
                 expiry_map = link_expiry.get(user_id, {})
                 for url in links:
@@ -469,7 +469,7 @@ def check_ads(bot: Bot):
             else:
                 active_links = links
 
-            # если нет подписки и ни одной активной ссылки — пропускаем пользователя
+            
             if not is_subscribed and not active_links:
                 logging.info(f"⛔ Пользователь {user_id} без подписки и без активных ссылок — пропущен.")
                 continue
@@ -503,12 +503,12 @@ def check_ads(bot: Bot):
                         if ad['id'] not in seen_ads.get(user_id, {}):
                             seen_ads.setdefault(user_id, {})[ad['id']] = datetime.now().strftime("%Y-%m-%d")
 
-                            # Ограничение истории
+                            
                             if len(seen_ads[user_id]) > MAX_SEEN_PER_USER:
                                 seen_ads[user_id] = set(list(seen_ads[user_id])[-MAX_SEEN_PER_USER // 2:])
                             save_seen_ads()
 
-                            # Оценка по медиане
+                            
                             if median_price > 0:
                                 if ad['price'] < median_price * 0.7:
                                     label = "🟢 Ниже рынка"
@@ -560,7 +560,7 @@ def check_ads(bot: Bot):
 
 
 
-# === КНОПКИ ===
+
 def main_menu():
     return ReplyKeyboardMarkup([
         ["🔍 Новый фильтр"],
@@ -568,7 +568,7 @@ def main_menu():
         ["📋 Мои ссылки", "🗑 Удалить ссылку"]
     ], resize_keyboard=True)
 
-# === ОБРАБОТЧИКИ ===
+
 def start(update: Update, context: CallbackContext):
     user_id = update.message.chat_id
 
@@ -627,7 +627,7 @@ def handle_message(update: Update, context: CallbackContext):
     temp = user_temp_data.setdefault(user_id, {})
     text = update.message.text.strip().lower()
 
-    # === Оплата и подписка ===
+    
     
     if text == "💳 оплатить":
         plans = (
@@ -660,7 +660,7 @@ def handle_message(update: Update, context: CallbackContext):
         )
         return
 
-    # === Блок доступа без подписки ===
+    
     if not has_active_subscription(user_id) and link_balance.get(user_id, 0) <= 0:
         update.message.reply_text(
             "🚫 Подписка неактивна. Чтобы пользоваться ботом:\n\n"
@@ -677,7 +677,7 @@ def handle_message(update: Update, context: CallbackContext):
         )
         return
 
-    # === Удаление ссылки ===
+    
     if state == 'deleting_link':
         links = user_links.get(user_id, [])
         if text.isdigit():
@@ -697,7 +697,7 @@ def handle_message(update: Update, context: CallbackContext):
         )
         return
 
-    # === Пошаговое создание фильтра ===
+    
     if state == 'awaiting_city':
         if text == "вся россия":
             temp['city'] = ''
@@ -750,7 +750,7 @@ def handle_message(update: Update, context: CallbackContext):
         user_temp_data[user_id] = {}
         return
 
-    # === Ручное добавление ссылки ===
+    
     if state == 'waiting_for_link':
         if 'avito.ru' not in text:
             update.message.reply_text("⚠️ Это не похоже на ссылку Avito. Попробуй ещё раз.")
@@ -772,7 +772,7 @@ def handle_message(update: Update, context: CallbackContext):
             link_balance[user_id] = link_balance.get(user_id, 1) - 1
             save_link_balance()
 
-            # ⏳ Устанавливаем срок действия ссылки — 30 дней
+            
             expiry = (datetime.now() + timedelta(days=30)).strftime("%Y-%m-%d")
             link_expiry.setdefault(user_id, {})[text] = expiry
             save_link_expiry()
@@ -781,7 +781,7 @@ def handle_message(update: Update, context: CallbackContext):
         user_states[user_id] = None
         return
 
-    # === Основные команды ===
+    
     if text == "➕ отследить ссылку":
         user_states[user_id] = 'waiting_for_link'
         update.message.reply_text("🔗 Введите ссылку для отслеживания:")
@@ -821,7 +821,7 @@ def handle_message(update: Update, context: CallbackContext):
         )
         return
 
-    # === Фолбэк ===
+    
     update.message.reply_text(
         "Я тебя не понял. Пожалуйста, используй кнопки. 😊",
         reply_markup=main_menu()
@@ -831,7 +831,7 @@ def auto_cleanup():
     while True:
         now = datetime.now()
 
-        # === 1. Очистка seen_ads: старше 30 дней ===
+        
         cutoff = now - timedelta(days=30)
         removed_count = 0
 
@@ -847,7 +847,7 @@ def auto_cleanup():
             save_seen_ads()
             logging.info(f"🧹 Удалено {removed_count} старых объявлений из seen_ads.json")
 
-        # === 2. Очистка истёкших ссылок ===
+    
         for user_id, url_map in link_expiry.items():
             user_links_list = user_links.get(int(user_id), [])
             to_delete = []
